@@ -9,7 +9,7 @@ def test_analyze_cashback_categories(capsys: CaptureFixture[str], test_transacti
     """Тестируем работу функции, когда найдены транзакции в указанную дату"""
     analyze_cashback_categories(test_transactions, 2021, 12)
     captured = capsys.readouterr()
-    assert captured.out == ("{\n" '    "Супермаркеты": 0,\n' '    "Ж/д билеты": 70\n' "}\n")
+    assert captured.out == ("{\n" '    "Ж/д билеты": 70,\n' '    "Супермаркеты": 0\n' "}\n")
 
 
 def test_analyze_cashback_categories_nul(capsys: CaptureFixture[str], test_transactions: List[Dict[str, Any]]) -> None:

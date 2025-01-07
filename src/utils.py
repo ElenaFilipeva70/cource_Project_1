@@ -1,6 +1,5 @@
 # import os
 
-from datetime import datetime
 from typing import Any, Dict, List
 
 import pandas as pd
@@ -13,6 +12,7 @@ def get_read_excel(path_file_excel: str) -> List[Dict[str, Any]]:
         # df_shape = df_xls.shape
         # print(df_shape)
         df_xls.fillna(0, inplace=True)
+        # print(df_xls)
     except Exception as e:
         print(type(e).__name__)
         return []
@@ -27,15 +27,15 @@ def get_read_excel(path_file_excel: str) -> List[Dict[str, Any]]:
 # print(read_excel_transaction)
 
 
-def date_conversions(transactions: Dict[str, Any]) -> datetime | None:
-    """Преобразование даты в объект datetime"""
-    try:
-        if transactions["Дата операции"] != 0:
-            date_operation = transactions["Дата операции"].split(" ")
-            date_obj = datetime.strptime(date_operation[0], "%d.%m.%Y")
-            return date_obj
-        else:
-            return None
-    except Exception as e:
-        print(type(e).__name__)
-        return None
+# def date_conversions(transactions: Dict[str, Any]) -> datetime | None:
+#     """Преобразование даты в объект datetime"""
+#     try:
+#         if transactions["Дата операции"] != 0:
+#             date_operation = transactions["Дата операции"].split(" ")
+#             date_obj = datetime.strptime(date_operation[0], "%d.%m.%Y")
+#             return date_obj
+#         else:
+#             return None
+#     except Exception as e:
+#         print(type(e).__name__)
+#         return None
