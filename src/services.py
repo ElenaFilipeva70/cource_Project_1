@@ -5,11 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List
 
-from src.utils import get_read_excel
-
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# path_file_excel = os.path.join(base_dir, "data", "Книга4.xlsx")
-path_file_excel = os.path.join(base_dir, "data", "operations.xlsx")
 path_log_file = os.path.join(base_dir, "logs", "services.log")
 
 logger = logging.getLogger(__name__)
@@ -20,18 +16,15 @@ logger.addHandler(file_handler)
 logger.setLevel(logging.INFO)
 
 
-def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: int) -> str | None:
+def analyze_cashback_categories(data_list: List[Dict[str, Any]], year: int, month: int) -> str | None:
     """Анализирует, какие категории были наиболее выгодными для выбора в качестве категорий повышенного кешбэка.
     Входные данные: данные с транзакциями, год и месяц, за которые проводится анализ.
     На выходе — JSON с анализом, сколько на каждой категории можно заработать кешбэка в указанном месяце года."""
     cashback_analysis = defaultdict(float)
     try:
-        logger.info("Функция начала работу")
-        for transaction in data:
-            # date_obj = date_conversions(transaction)
-            # date_operation = transaction['Дата операции'].split(' ')
+        logger.info(f"Функция {__name__} начала работу")
+        for transaction in data_list:
             date_obj = datetime.strptime(transaction["Дата операции"], "%d.%m.%Y %H:%M:%S")
-            print(date_obj)
             if date_obj:
                 year_str = date_obj.year
                 month_str = date_obj.month
@@ -39,18 +32,24 @@ def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: in
                     category = transaction.get("Категория", "Неизвестная категория")
                     cashback_analysis[category] += transaction["Кэшбэк"]
         cashback_analysis_dict = dict(cashback_analysis)
-        cashback_analysis_int = {k: int(v) for k, v in cashback_analysis_dict.items()}
-        result_cashback_analysis = dict(sorted(cashback_analysis_int.items(), key=lambda x: x[1], reverse=True))
-        logger.info(f"Кешбэк по категориям за {month}/{year}: {result_cashback_analysis}")
-        result_diction = json.dumps(result_cashback_analysis, ensure_ascii=False, indent=4)
-        print(result_diction)
-        return result_diction
+        cashback_analysis_dict = {k: v for k, v in cashback_analysis_dict.items() if v > 0}
+        if cashback_analysis_dict:
+            logger.info("Выполнили отбор транзакций за выбранный период")
+            cashback_analysis_int = {k: int(v) for k, v in cashback_analysis_dict.items()}
+            result_cashback_analysis = dict(sorted(cashback_analysis_int.items(), key=lambda x: x[1], reverse=True))
+            result_diction = json.dumps(result_cashback_analysis, ensure_ascii=False, indent=4)
+            print(result_diction)
+            return result_diction
+        else:
+            logger.info("За выбранный период нет транзакций с ненулевым кэшбэком")
+            print("За выбранный период нет транзакций с ненулевым кэшбэком")
+            return None
     except Exception as e:
         print(type(e).__name__)
         logger.error(f"Возникла ошибка {e}", exc_info=True)
         return None
     finally:
-        logger.info("Функция завершила работу")
+        logger.info(f"Функция {__name__} завершила работу")
 
 
 # if __name__ == "__main__":
@@ -64,8 +63,3 @@ def analyze_cashback_categories(data: List[Dict[str, Any]], year: int, month: in
 #                      'Валюта платежа': 'RUB', 'Кэшбэк': 70, 'Категория': 'Ж/д билеты', 'MCC': 5411.0,
 #                      'Описание': 'Колхоз', 'Бонусы (включая кэшбэк)': 1, 'Округление на инвесткопилку': 0,
 #                      'Сумма операции с округлением': 64.0}]
-
-
-data = get_read_excel(path_file_excel)
-# print(data)
-result = analyze_cashback_categories(data, 2019, 8)

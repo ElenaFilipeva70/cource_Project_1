@@ -1,33 +1,26 @@
 import os
 import pandas as pd
 
-from typing import Any, Dict, List
-
 from src.services import analyze_cashback_categories
 from src.reports import spending_by_category
 from src.utils import get_read_excel
+from src.views import home_page
 
 
 base_dir = os.path.dirname(os.path.abspath(__file__))
-path_file_excel = os.path.join(base_dir, "data", "Книга2.xlsx")
-# path_file_excel = os.path.join(base_dir, "data", "operations.xlsx")
-path_log_file = os.path.join(base_dir, "logs", "services.log")
+# path_file_excel = os.path.join(base_dir, "data", "Книга2.xlsx")
+path_file_excel = os.path.join(base_dir, "data", "operations.xlsx")
 
 
 def main() -> None:
-    """"""
-    # data = get_read_excel(path_file_excel)
-    # print(data)
-    # analyze_cashback_categories(data, 2019, 8)
+    """Функция, которая отвечает за основную логику проекта и связывает функциональности между собой"""
     df_xls = pd.read_excel(path_file_excel)
-    # df_shape = df_xls.shape
-    # print(df_shape)
     df_xls.fillna(0, inplace=True)
-    # print(dict(df_xls))
-    spending_by_category(df_xls, "Супермаркеты", "31.12.2021" )
-
-
-
+    home_page(df_xls, "2021-12-31 00:00:00")
+    data_list = get_read_excel(path_file_excel)
+    analyze_cashback_categories(data_list, 2021, 12)
+    # spending_by_category(df_xls, "Аптеки", "2021-12-31 00:00:00" )
+    spending_by_category(df_xls, "аптеки", "2018-07-30 00:00:00")
 
 
 main()

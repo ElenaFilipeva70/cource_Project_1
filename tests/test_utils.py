@@ -1,10 +1,9 @@
-from datetime import datetime
 from typing import Any, Dict
 from unittest.mock import patch
 
 import pandas as pd
 
-from src.utils import date_conversions, get_read_excel
+from src.utils import get_read_excel
 
 
 @patch("pandas.read_excel")
@@ -28,31 +27,31 @@ def test_get_read_excel_not_found() -> None:
     assert result == []
 
 
-def test_date_conversions() -> None:
-    """Тестируем работу функции на преобразование даты в объект datetime"""
-    test_transaction: Dict[str, Any] = {
-        "Дата операции": "31.12.2021 16:44:00",
-        "Дата платежа": "31.12.2021",
-        "Номер карты": "*7197",
-        "Статус": "OK",
-        "Сумма операции": -160.89,
-        "Валюта операции": "RUB",
-        "Кэшбэк": 0,
-        "Категория": "Супермаркеты",
-    }
-    assert date_conversions(test_transaction) == datetime(2021, 12, 31, 0, 0)
-
-
-def test_date_conversions_empty() -> None:
-    """Проверяем работу функции, когда значение 'Дата операции' пустое в исходном файле транзакций"""
-    test_transaction: Dict[str, Any] = {
-        "Дата операции": 0,
-        "Дата платежа": "31.12.2021",
-        "Номер карты": "*7197",
-        "Статус": "OK",
-        "Сумма операции": -160.89,
-        "Валюта операции": "RUB",
-        "Кэшбэк": 0,
-        "Категория": "Супермаркеты",
-    }
-    assert date_conversions(test_transaction) == None
+# def test_date_conversions() -> None:
+#     """Тестируем работу функции на преобразование даты в объект datetime"""
+#     test_transaction: Dict[str, Any] = {
+#         "Дата операции": "31.12.2021 16:44:00",
+#         "Дата платежа": "31.12.2021",
+#         "Номер карты": "*7197",
+#         "Статус": "OK",
+#         "Сумма операции": -160.89,
+#         "Валюта операции": "RUB",
+#         "Кэшбэк": 0,
+#         "Категория": "Супермаркеты",
+#     }
+#     assert date_conversions(test_transaction) == datetime(2021, 12, 31, 0, 0)
+#
+#
+# def test_date_conversions_empty() -> None:
+#     """Проверяем работу функции, когда значение 'Дата операции' пустое в исходном файле транзакций"""
+#     test_transaction: Dict[str, Any] = {
+#         "Дата операции": 0,
+#         "Дата платежа": "31.12.2021",
+#         "Номер карты": "*7197",
+#         "Статус": "OK",
+#         "Сумма операции": -160.89,
+#         "Валюта операции": "RUB",
+#         "Кэшбэк": 0,
+#         "Категория": "Супермаркеты",
+#     }
+#     assert date_conversions(test_transaction) == None

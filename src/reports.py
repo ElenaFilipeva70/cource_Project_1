@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from collections.abc import Callable
 from datetime import datetime, timedelta
@@ -7,8 +8,18 @@ from typing import Any, Optional
 
 import pandas as pd
 
+from src.utils import get_filtered_transactions
+
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 path_file_report = os.path.join(base_dir, "reports", "my_report.json")
+path_log_file = os.path.join(base_dir, "logs", "reports.log")
+
+logger = logging.getLogger(__name__)
+file_handler = logging.FileHandler(path_log_file, "w", encoding="utf-8")
+file_formatter = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formatter)
+logger.addHandler(file_handler)
+logger.setLevel(logging.INFO)
 
 
 def reports_decorator(filename: Optional[str] = None) -> Callable:
@@ -22,15 +33,18 @@ def reports_decorator(filename: Optional[str] = None) -> Callable:
             try:
                 result = func(*args, **kwargs)
                 if filename is None:
+                    logger.info("Создаем директорию для отчета и формируем имя файла")
                     file_name = f"{func.__name__}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
                     filename = os.path.join(base_dir, "reports", file_name)
                     os.makedirs(os.path.dirname(filename), exist_ok=True)
-                if isinstance(result, pd.DataFrame):
-                    with open(filename, "w", encoding="utf-8") as file:
-                        json.dump(result.to_dict(orient="records"), file, ensure_ascii=False, indent=4)
-                    print(f"Данные успешно записаны в файл: {filename}")
-                    return result
+                logger.info(f"Записываем результат работы функции {func.__name__} в файл")
+                with open(filename, "w", encoding="utf-8") as file:
+                    json.dump(result.to_dict(orient="records"), file, ensure_ascii=False, indent=4)
+                logger.info(f"Данные успешно записаны в файл: {filename}")
+                print(f"Данные успешно записаны в файл: {filename}")
+                return result
             except TypeError as error:
+                logger.error(f"Данные не были записаны в файл,ошибка {error.__class__.__name__}", exc_info=True)
                 print(f"Данные не были записаны в файл из-за ошибки {error.__class__.__name__}")
 
         return wrapper
@@ -41,46 +55,40 @@ def reports_decorator(filename: Optional[str] = None) -> Callable:
 @reports_decorator(filename=path_file_report)
 def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """Функция возвращает траты по заданной категории за последние три месяца (от переданной даты)."""
+    logger.info(f"Функция {__name__} начала работу")
     if date is None:
-        date_obj = datetime.now().strftime("%Y-%m-%d")
+        date_obj = datetime.now()
+        # print(1, type(date_obj), date_obj)
     else:
         try:
-            date_obj = datetime.strptime(date, "%d.%m.%Y")
-            print(date)
+            date_obj = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+            # print(2, type(date_obj), date_obj)
         except ValueError:
-            raise ValueError("Неверный формат даты. Используйте DD.MM.YYYY")
+            logger.info("Введен неверный формат даты.")
+            raise ValueError("Неверный формат даты и времени. Используйте YYYY-MM-DD HH:MM:SS")
     try:
-        transactions["Дата операции"] = pd.to_datetime(transactions["Дата операции"], dayfirst=True)
-        # print(transactions['Дата операции'])
-    except KeyError:
-        raise KeyError("В DataFrame отсутствует колонка 'Дата операции'")
-    starting_date = date_obj - timedelta(days=90)
-    print(type(date_obj), type(timedelta))
-    print(starting_date)
-    filtered_transactions = transactions[
-        (transactions["Дата операции"] >= starting_date)
-        & (transactions["Дата операции"] <= date_obj)
-        & (transactions["Категория"].str.upper() == category.upper())
-    ]
-    if filtered_transactions.empty:
-        print("Нет транзакций по этой категории за указанный период.")
+        start_date = date_obj - timedelta(days=90)
+        # print("3", type(start_date), start_date)
+        logger.info("Фильтруем совершенные расходы за последние три месяца от переданной даты")
+        filtered_transactions = get_filtered_transactions(transactions, date_obj, start_date)
+        if filtered_transactions.empty:
+            logger.info("Нет расходов за выбранный период.")
+            # print("Нет расходов за выбранный период.")
+            return pd.DataFrame()
+        filtered_transactions["Дата операции"] = filtered_transactions["Дата операции"].dt.strftime("%d.%m.%Y")
+        result_transactions = pd.DataFrame(
+            filtered_transactions[(filtered_transactions["Категория"].str.upper() == category.upper())]
+        )
+        if result_transactions.empty:
+            logger.info(f"По категории '{category}' за выбранный период не было расходов.")
+            print(f"По категории '{category}' за выбранный период не было расходов.")
+            return pd.DataFrame()
+        result_transactions = result_transactions[["Дата операции", "Категория", "Сумма операции", "Описание"]]
+        print(result_transactions)
+        return result_transactions
+    except Exception as e:
+        print(type(e).__name__)
+        logger.error(f"Возникла ошибка {e}", exc_info=True)
         return pd.DataFrame()
-    result_transactions = pd.DataFrame(
-        filtered_transactions.groupby("Категория", as_index=False).agg({"Сумма операции": "sum"})
-    )
-    # result_transactions = pd.DataFrame(filtered_transactions.groupby('Категория', as_index=False).
-    #                                    sum(numeric_only=True)['Сумма операции'])
-    print(result_transactions)
-    result_dict = result_transactions.to_dict(orient="records")
-    print(result_dict)
-    return result_transactions
-
-
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-path_file_excel = os.path.join(base_dir, "data", "Книга4.xlsx")
-# path_file_excel = os.path.join(base_dir, "data", "operations.xlsx")
-df_xls = pd.read_excel(path_file_excel)
-df_xls.fillna(0, inplace=True)
-spending_by_category(df_xls, "Каршеринг", "31.12.2021")
-
-# Супермаркеты       -25510.56  ...                      25510.56
+    finally:
+        logger.info(f"Функция {__name__} завершила работу")
