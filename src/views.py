@@ -10,7 +10,6 @@ from src.utils import (
     external_api_currency,
     external_api_stock,
     get_filtered_transactions,
-    get_greeting,
     top_transactions,
 )
 
@@ -25,19 +24,18 @@ logger.addHandler(file_handler)
 logger.setLevel(logging.INFO)
 
 
-def home_page(df_xls: pd.DataFrame, data: str) -> str:
+def home_page(df_xls: pd.DataFrame, data: str, greeting: str) -> str:
     """Функция создает JSON-ответ на основе переданной даты и файла с транзакциями:
     1)приветствие; 2) общая сумма расходов и кешбэк по каждой карте; 3) топ-5 транзакций по сумме платежа;
     4) курс валют; 5) стоимость акций из S&P500."""
+
+    logger.info(f"Функция {__name__} начала работу")
     try:
-        logger.info(f"Функция {__name__} начала работу")
-        current_time = datetime.now()
-        try:
-            date_obj = datetime.strptime(data, "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            logger.error("Введен неверный формат даты.")
-            raise ValueError("Неверный формат даты и времени. Используйте YYYY-MM-DD HH:MM:SS")
-        greeting = get_greeting(current_time)
+        date_obj = datetime.strptime(data, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        logger.error("Введен неверный формат даты.")
+        raise ValueError("Неверный формат даты и времени. Используйте YYYY-MM-DD HH:MM:SS")
+    try:
         logger.info("Формируем JSON-ответ с заданными данными")
         start_date = date_obj.replace(day=1)
         filtered_transaction = get_filtered_transactions(df_xls, date_obj, start_date)
@@ -47,20 +45,20 @@ def home_page(df_xls: pd.DataFrame, data: str) -> str:
         else:
             expenses = []
             df_top_transactions = []
-        # currency_rates = external_api_currency()
-        # stock_prices = external_api_stock()
+        currency_rates = external_api_currency()
+        stock_prices = external_api_stock()
         response = {
             "greeting": greeting,
             "cards": expenses,
             "top_transactions": df_top_transactions,
-            # "currency_rates": currency_rates,
-            # "stock_prices": stock_prices
+            "currency_rates": currency_rates,
+            "stock_prices": stock_prices,
         }
         print(json.dumps(response, ensure_ascii=False, indent=4))
         return json.dumps(response, ensure_ascii=False, indent=4)
-    except ValueError as e:
-        logger.error(f"Ошибка: {e}.")
-        print(f"Ошибка: {e}.")
+    except Exception as e:
+        logger.error(f"Возникла ошибка {e}", exc_info=True)
+        print(type(e).__name__)
         return json.dumps(
             {"Error": "Неверный формат даты и времени. Используйте YYYY-MM-DD HH:MM:SS."}, ensure_ascii=False
         )

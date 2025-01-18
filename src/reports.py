@@ -58,22 +58,18 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
     logger.info(f"Функция {__name__} начала работу")
     if date is None:
         date_obj = datetime.now()
-        # print(1, type(date_obj), date_obj)
     else:
         try:
             date_obj = datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
-            # print(2, type(date_obj), date_obj)
         except ValueError:
             logger.info("Введен неверный формат даты.")
             raise ValueError("Неверный формат даты и времени. Используйте YYYY-MM-DD HH:MM:SS")
     try:
         start_date = date_obj - timedelta(days=90)
-        # print("3", type(start_date), start_date)
         logger.info("Фильтруем совершенные расходы за последние три месяца от переданной даты")
         filtered_transactions = get_filtered_transactions(transactions, date_obj, start_date)
         if filtered_transactions.empty:
             logger.info("Нет расходов за выбранный период.")
-            # print("Нет расходов за выбранный период.")
             return pd.DataFrame()
         filtered_transactions["Дата операции"] = filtered_transactions["Дата операции"].dt.strftime("%d.%m.%Y")
         result_transactions = pd.DataFrame(
@@ -84,7 +80,6 @@ def spending_by_category(transactions: pd.DataFrame, category: str, date: Option
             print(f"По категории '{category}' за выбранный период не было расходов.")
             return pd.DataFrame()
         result_transactions = result_transactions[["Дата операции", "Категория", "Сумма операции", "Описание"]]
-        print(result_transactions)
         return result_transactions
     except Exception as e:
         print(type(e).__name__)

@@ -108,6 +108,7 @@ def get_filtered_transactions(transactions: pd.DataFrame, date_obj: datetime, st
         if filtered_by_status.empty:
             filtered_transactions_logger.info("Нет расходов за выбранный период.")
             print("Нет расходов за выбранный период.")
+            return pd.DataFrame()
         filtered_transactions_logger.info("Выполнили отбор транзакций за выбранный период")
         return filtered_by_status
     except Exception as e:
@@ -162,11 +163,9 @@ def external_api_currency() -> List[Dict[str, Any]]:
                     f"Код статуса ответа на запрос для получения текущего курса валют " f"{status_code}"
                 )
         return result_list
-    except requests.exceptions.RequestException:
-        external_api_currency_logger.error(
-            f"Запрос для получения текущего курса валют завершился ошибкой:" f" {response.reason}"
-        )
-        print(f"Запрос для получения текущего курса валют завершился ошибкой: {response.reason}")
+    except requests.exceptions.RequestException as e:
+        external_api_currency_logger.error(f"Запрос для получения текущего курса валют завершился ошибкой: {str(e)}")
+        print(f"Запрос для получения текущего курса валют завершился ошибкой: {str(e)}")
         return []
     finally:
         external_api_currency_logger.info("Функция получения текущего курса валют завершила работу")
@@ -177,16 +176,13 @@ def external_api_stock() -> List[Dict[str, Any]]:
     external_api_stock_logger.info("Функция получения цен на акции начала работу")
     result_list = []
     end_date = datetime.now().date() - timedelta(days=1)
-    # print(end_date)
     start_date = end_date - timedelta(days=2)
-    # print(start_date)
     headers = {"apikey": API}
     try:
         for i in user_stocks:
             url = f"https://api.polygon.io/v2/aggs/ticker/{i}/range/1/day/{start_date}/{end_date}?apiKey={API}"
             response = requests.get(url, headers=headers)
             status_code = response.status_code
-            # print(status_code)
             if status_code == 200:
                 result = {"stock": i, "price": round(response.json()["results"][0]["c"], 2)}
                 result_list.append(result)
@@ -195,9 +191,9 @@ def external_api_stock() -> List[Dict[str, Any]]:
                     f"Код статуса ответа на запрос для получения цен на акции {status_code}"
                 )
         return result_list
-    except requests.exceptions.RequestException:
-        external_api_stock_logger.error(f"Запрос для получения цен на акции завершился ошибкой: {response.reason}")
-        print(f"Запрос для получения цен на акции завершился ошибкой: {response.reason}")
+    except requests.exceptions.RequestException as e:
+        external_api_stock_logger.error(f"Запрос для получения цен на акции завершился ошибкой: {str(e)}")
+        print(f"Запрос для получения цен на акции завершился ошибкой: {str(e)}")
         return []
     finally:
         external_api_stock_logger.info("Функция получения цен на акции завершила работу")
