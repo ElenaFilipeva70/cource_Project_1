@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-poetry-core = "^1.9.1"
+poetry-core = "^2.0.0"
 mock = "^5.1.0"
 requests = "^2.32.3"
 python-dotenv = "^1.0.1"
@@ -15,6 +15,7 @@ pandas = "^2.2.3"
 openpyxl = "^3.1.5"
 types-requests = "^2.32.0.20241016"
 stubs = "^1.0.0"
+numpy = "^2.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
